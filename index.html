@@ -14299,6 +14299,8 @@ async function coachCancel(id){
 
 async function renderClients(){
   const el=document.getElementById('clients-list');
+  // Build set of emails with fall session bookings
+  const fallClients=new Set(S.bookings.filter(b=>b.payment==='fall_session'&&b.status!=='cancelled').map(b=>b.client_email));
   const f=document.getElementById('c-filter').value;
   const{data:clients}=await sb.from('clients').select('id,name,email,level,pack,total,contact,team,created_at');
   S.clients=clients||[];
@@ -14350,6 +14352,7 @@ async function renderClients(){
       <div>
         <div class="item-name">${c.name} ${c.pack>0?`<span class="badge-pack">${c.pack} left</span>`:''}${packInfo}</div>
         ${c.team?`<div style="font-size:11px;color:#a78bfa;font-weight:600;margin-top:2px;">🏆 ${c.team}</div>`:''}
+        ${fallClients.has(c.email)?`<div style="font-size:11px;color:#FFA500;font-weight:700;margin-top:2px;">🍂 Fall Session</div>`:''}
         <div class="item-detail">${c.contact||c.email} · ${c.total||0} sessions</div>
       </div>
       ${c.level?`<span class="${lc(c.level)}">${ll(c.level)}</span>`:`<span style="color:var(--orange);font-size:11px;">No level</span>`}
