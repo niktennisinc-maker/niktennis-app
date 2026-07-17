@@ -14441,7 +14441,7 @@ async function renderClients(){
       ${c.level?`<span class="${lc(c.level)}">${ll(c.level)}</span>`:`<span style="color:var(--orange);font-size:11px;">No level</span>`}
     </div>
     <div class="item-actions">
-      <button class="btn-sm" onclick="showClientHistory('${c.email}','${c.name.replace(/'/g,\"\\'\")}')">📋 History</button>
+      <button class="btn-sm" data-email="${c.email}" data-name="${c.name}" onclick="showClientHistory(this.dataset.email,this.dataset.name)">📋 History</button>
       <button class="btn-sm" onclick="openLvlModal('${c.email}')">✏️ Level</button>
       <button class="btn-sm" onclick="openTeamModal('${c.email}')" style="border-color:rgba(167,139,250,.4);color:#a78bfa;">🏆 Team</button>
       <select class="btn-sm" onchange="setPackPos('${c.email}',this.value)" style="background:var(--card);border:1px solid rgba(245,200,66,.4);color:var(--gold);border-radius:8px;padding:3px 6px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;outline:none;">
