@@ -13240,6 +13240,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
   <div class="topbar">
     <div class="t-logo">[NIK<em>TENNIS</em>]</div>
     <div class="t-right">
+      <div class="chip chip-gold" id="client-avatar-btn" onclick="switchClientTab('profile')" style="cursor:pointer;">N</div>
       <button class="out-btn" onclick="signOut()">Sign Out</button>
     </div>
   </div>
@@ -14722,6 +14723,7 @@ async function openCoachStats(){
 
 // ── CLIENT ──
 async function refreshClient(){
+  var _av=document.getElementById('client-avatar-btn');if(_av&&S.profile&&S.profile.name)_av.textContent=S.profile.name.charAt(0).toUpperCase();
   checkPauseState();
   loadBanner();
   try{
