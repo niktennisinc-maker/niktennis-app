@@ -14724,8 +14724,11 @@ async function refreshClient(){
   checkPauseState();
   loadBanner();
   try{
+    if(!S.user){
+      try{const{data:{session}}=await sb.auth.getSession();if(session)S.user=session.user;else{showScreen('login');return;}}
+      catch(e){showScreen('login');return;}
+    }
     const u=S.user;
-    if(!u){showScreen('login');return;}
     const{data:profile}=await sb.from('clients').select('id,name,email,level,pack,total,contact,team,created_at').eq('email',u.email).maybeSingle();
     S.profile=profile;
     const c=profile;
