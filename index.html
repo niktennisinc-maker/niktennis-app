@@ -14147,6 +14147,8 @@ async function refreshCoach(){
     renderSlots();renderClients();renderBookings();
     loadTeamSchedules();
     initPauseButton();
+    // Always land on Schedule tab
+    const _st=document.querySelector('.ctab');if(_st&&!_st.classList.contains('active'))_st.click();
   }catch(e){console.error('refreshCoach error:',e);}
 }
 
