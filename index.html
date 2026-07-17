@@ -13647,6 +13647,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
 </div>
 
 <script>
+function setDateMin(){
+  const today=new Date().toISOString().split('T')[0];
+  document.querySelectorAll('input[type="date"]').forEach(function(inp){inp.min=today;inp.value=inp.value||today;});
+}
+
 function toggleClientView(){
   var btn=document.getElementById('client-view-btn');
   if(!S._inClientView){
