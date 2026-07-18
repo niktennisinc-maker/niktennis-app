@@ -14820,7 +14820,7 @@ function renderHomeUpcoming(){
   }).filter(b=>b.classDate&&b.classDate>=now)
     .sort((a,b)=>a.classDate-b.classDate);
 
-  const upcoming=withDates.filter(b=>b.classDate<=twoWeeks);
+  const upcoming=withDates; // Show ALL upcoming classes
 
   if(!withDates.length){
     if(header)header.style.display='none';
