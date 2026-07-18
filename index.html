@@ -15439,10 +15439,26 @@ function openModal(slotId){
   const pack=S.profile?.pack||0;
   const packEl=document.getElementById('m-pack-use');
   const buyPackEl=document.getElementById('m-buy-pack');
-  if(pack>0){
+  const isFallSlot=slot.season==='fall'||slot.date>='2026-09-08';
+  if(pack>0&&!isFallSlot){
+    // Regular slot - pack can be used
     packEl.style.display='block';
     document.getElementById('m-pack-left').textContent=pack+' lesson'+(pack!==1?'s':'')+' remaining';
     buyPackEl.style.display='none';
+  } else if(isFallSlot){
+    // Fall slot - pack NOT allowed, only individual pay or fall session package
+    packEl.style.display='none';
+    buyPackEl.style.display='none';
+    // Show fall session notice
+    let fallNotice=document.getElementById('m-fall-notice');
+    if(!fallNotice){
+      fallNotice=document.createElement('div');
+      fallNotice.id='m-fall-notice';
+      fallNotice.style.cssText='background:rgba(255,165,0,.1);border:1px solid rgba(255,165,0,.3);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#FFA500;';
+      fallNotice.innerHTML='🍂 <strong>Fall Session class.</strong> Pay individually ($70) or purchase the Fall Session Package ($560 for 8 weeks) from the Buy tab.';
+      packEl.parentNode.insertBefore(fallNotice,packEl);
+    }
+    fallNotice.style.display='block';
   } else {
     packEl.style.display='none';
     buyPackEl.style.display='flex';
@@ -15452,6 +15468,7 @@ function openModal(slotId){
 }
 
 function closeModal(){
+  const fn=document.getElementById('m-fall-notice');if(fn)fn.style.display='none';
   document.getElementById('modal').classList.remove('open');
   S.selSlot=null;
   S.selPay=null;
