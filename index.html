@@ -13931,59 +13931,64 @@ function openBlast(){
 async function sendBlast(){
   const msg=document.getElementById('blast-message').value.trim();
   if(!msg){alert('Enter a message.');return;}
-  const useSMS=document.getElementById('blast-sms').checked;
   const useEmail=document.getElementById('blast-email').checked;
-  if(!useSMS&&!useEmail){alert('Select at least SMS or Email.');return;}
-
   const btn=document.getElementById('blast-send-btn');
   btn.disabled=true;btn.textContent='Sending...';
   const statusEl=document.getElementById('blast-status');
 
-  let sent=0,failed=0;
-  const total=S.clients.length;
+  if(!useEmail){alert('Select Email.');btn.disabled=false;btn.textContent='Send to All '+S.clients.length+' Clients';return;}
 
-  for(const c of S.clients){
-    try{
-      // Save to blast_log in Supabase for email/SMS processing
-      await sb.from('settings').upsert({
-        key:'blast_'+Date.now()+'_'+c.email,
-        value:JSON.stringify({
-          to_email:useEmail?c.email:null,
-          to_phone:useSMS?c.contact:null,
-          name:c.name,
-          message:msg,
-          sent_at:new Date().toISOString()
-        })
-      });
-      sent++;
-      statusEl.textContent=`Queued ${sent}/${total}...`;
-    }catch(e){failed++;}
-  }
+  statusEl.textContent='Preparing emails...';
 
-  statusEl.textContent=`✅ Queued ${sent} messages${failed>0?' ('+failed+' failed)':''}.`;
-  btn.textContent='Sent!';
+  // Build email HTML with flyer
+  const emailHTML=`<!DOCTYPE html>
+<html><body style="margin:0;padding:0;background:#000;font-family:Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;background:#080A08;color:#fff;">
+  <div style="background:linear-gradient(135deg,#1a2a1a,#0d1a0d);padding:40px 30px;text-align:center;">
+    <div style="font-size:32px;font-weight:900;letter-spacing:2px;margin-bottom:8px;">[NIK<span style="color:#c8f042;">TENNIS</span>]</div>
+    <div style="color:#c8f042;font-size:11px;letter-spacing:4px;text-transform:uppercase;">Book · Play · Improve</div>
+  </div>
+  <div style="padding:30px;text-align:center;">
+    <div style="background:rgba(200,240,66,.08);border:1px solid rgba(200,240,66,.2);border-radius:16px;padding:24px;margin-bottom:24px;">
+      <div style="font-size:13px;letter-spacing:2px;color:#c8f042;margin-bottom:8px;">🍂 FALL 2026</div>
+      <div style="font-size:42px;font-weight:900;color:#fff;margin-bottom:4px;">Fall Tennis</div>
+      <div style="font-size:18px;color:#c8f042;margin-bottom:16px;">8-Week Session</div>
+      <div style="font-size:15px;color:#ccc;line-height:1.8;">
+        Sept 7 – Mid November<br>
+        <strong style="color:#fff;">$560</strong> for 8 weeks &nbsp;·&nbsp; <strong style="color:#fff;">$70</strong>/class<br>
+        Flexible floating time slots<br>
+        Rain dates @ Old Oaks Country Club<br>
+        🎾 Free weekend round robin every Sat & Sun 2–4pm
+      </div>
+    </div>
+    <div style="margin-bottom:24px;font-size:15px;color:#ccc;line-height:1.8;">Hey {{name}},<br><br>${msg}</div>
+    <a href="https://niktennis.netlify.app" style="display:inline-block;background:#c8f042;color:#000;font-weight:900;font-size:16px;padding:16px 40px;border-radius:50px;text-decoration:none;letter-spacing:1px;">BOOK NOW →</a>
+  </div>
+  <div style="padding:20px;text-align:center;border-top:1px solid #1a1a1a;font-size:11px;color:#555;">
+    niktennis.netlify.app &nbsp;·&nbsp; New Rochelle, NY
+  </div>
+</div>
+</body></html>`;
 
-  // If Twilio configured, send SMS now
-  const twilioConfig=S.twilioConfig;
-  if(useSMS&&twilioConfig?.accountSid){
-    statusEl.textContent='Sending SMS via Twilio...';
-    let smsSent=0;
-    for(const c of S.clients){
-      if(!c.contact||!c.contact.match(/\d{10,}/))continue;
-      try{
-        const phone='+1'+c.contact.replace(/\D/g,'').slice(-10);
-        const resp=await fetch('/api/sms',{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({to:phone,body:msg,from:twilioConfig.fromNumber})
-        });
-        smsSent++;
-        statusEl.textContent=`SMS: ${smsSent} sent...`;
-      }catch(e){}
-    }
-    statusEl.textContent=`✅ Done! ${smsSent} SMS sent.`;
-  } else if(useSMS){
-    statusEl.innerHTML='✅ Queued! <span style="color:var(--gold);">Set up Twilio in Settings to send SMS.</span>';
+  const emails=S.clients.filter(c=>c.email&&c.email.includes('@')).map(c=>({to:c.email,name:c.name.split(' ')[0]}));
+  statusEl.textContent='Sending to '+emails.length+' clients...';
+
+  try{
+    const resp=await fetch('/.netlify/functions/send-email',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        emails,
+        subject:'🍂 Fall Tennis is Here — Book Your Spot!',
+        html:emailHTML
+      })
+    });
+    const result=await resp.json();
+    statusEl.textContent='✅ Sent '+result.sent+' emails successfully!';
+    btn.textContent='Sent!';
+  }catch(e){
+    statusEl.textContent='❌ Error: '+e.message;
+    btn.disabled=false;btn.textContent='Retry';
   }
 }
 
