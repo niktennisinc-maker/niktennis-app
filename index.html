@@ -13920,6 +13920,89 @@ async function showClientHistory(email, name){
       </div>
     </div>`).join('');
 }
+
+function openBlast(){
+  document.getElementById('blast-modal').classList.add('open');
+  document.getElementById('blast-status').textContent='';
+  const btn=document.getElementById('blast-send-btn');
+  btn.disabled=false;btn.textContent='Send to All '+S.clients.length+' Clients';
+}
+
+async function sendBlast(){
+  const msg=document.getElementById('blast-message').value.trim();
+  if(!msg){alert('Enter a message.');return;}
+  const useSMS=document.getElementById('blast-sms').checked;
+  const useEmail=document.getElementById('blast-email').checked;
+  if(!useSMS&&!useEmail){alert('Select at least SMS or Email.');return;}
+
+  const btn=document.getElementById('blast-send-btn');
+  btn.disabled=true;btn.textContent='Sending...';
+  const statusEl=document.getElementById('blast-status');
+
+  let sent=0,failed=0;
+  const total=S.clients.length;
+
+  for(const c of S.clients){
+    try{
+      // Save to blast_log in Supabase for email/SMS processing
+      await sb.from('settings').upsert({
+        key:'blast_'+Date.now()+'_'+c.email,
+        value:JSON.stringify({
+          to_email:useEmail?c.email:null,
+          to_phone:useSMS?c.contact:null,
+          name:c.name,
+          message:msg,
+          sent_at:new Date().toISOString()
+        })
+      });
+      sent++;
+      statusEl.textContent=`Queued ${sent}/${total}...`;
+    }catch(e){failed++;}
+  }
+
+  statusEl.textContent=`✅ Queued ${sent} messages${failed>0?' ('+failed+' failed)':''}.`;
+  btn.textContent='Sent!';
+
+  // If Twilio configured, send SMS now
+  const twilioConfig=S.twilioConfig;
+  if(useSMS&&twilioConfig?.accountSid){
+    statusEl.textContent='Sending SMS via Twilio...';
+    let smsSent=0;
+    for(const c of S.clients){
+      if(!c.contact||!c.contact.match(/\d{10,}/))continue;
+      try{
+        const phone='+1'+c.contact.replace(/\D/g,'').slice(-10);
+        const resp=await fetch('/api/sms',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({to:phone,body:msg,from:twilioConfig.fromNumber})
+        });
+        smsSent++;
+        statusEl.textContent=`SMS: ${smsSent} sent...`;
+      }catch(e){}
+    }
+    statusEl.textContent=`✅ Done! ${smsSent} SMS sent.`;
+  } else if(useSMS){
+    statusEl.innerHTML='✅ Queued! <span style="color:var(--gold);">Set up Twilio in Settings to send SMS.</span>';
+  }
+}
+
+async function saveTwilioConfig(){
+  const sid=document.getElementById('twilio-sid').value.trim();
+  const token=document.getElementById('twilio-token').value.trim();
+  const phone=document.getElementById('twilio-phone').value.trim();
+  if(!sid||!token||!phone){alert('Fill in all Twilio fields.');return;}
+  await sb.from('settings').upsert({key:'twilio_config',value:JSON.stringify({accountSid:sid,authToken:token,fromNumber:phone})});
+  S.twilioConfig={accountSid:sid,authToken:token,fromNumber:phone};
+  document.getElementById('twilio-status').textContent='✅ Twilio configured!';
+}
+
+async function loadTwilioConfig(){
+  try{
+    const{data}=await sb.from('settings').select('value').eq('key','twilio_config').single();
+    if(data?.value){S.twilioConfig=JSON.parse(data.value);}
+  }catch(e){}
+}
 async function init(){
   try{
     sb.auth.onAuthStateChange(async(event,session)=>{
@@ -14147,6 +14230,7 @@ async function refreshCoach(){
     renderSlots();renderClients();renderBookings();
     loadTeamSchedules();
     initPauseButton();
+    loadTwilioConfig();
     // Always land on Schedule tab
     const _st=document.querySelector('.ctab');if(_st&&!_st.classList.contains('active'))_st.click();
   }catch(e){console.error('refreshCoach error:',e);}
@@ -15648,6 +15732,41 @@ async function removeFromRoster(bookingId){
         <button onclick="document.getElementById('history-modal').classList.remove('open')" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;">✕</button>
       </div>
       <div id="history-list" style="overflow-y:auto;max-height:60vh;"></div>
+    </div>
+  </div>
+
+  <!-- BLAST MODAL -->
+  <div class="overlay" id="blast-modal" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">📣 Send to All Clients</div>
+      <div class="sheet-sub" style="margin-bottom:16px;">Message will be sent via SMS + Email</div>
+      
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>Message</label>
+        <textarea id="blast-message" rows="5" style="width:100%;background:var(--dark);border:1px solid var(--border);color:var(--white);border-radius:10px;padding:12px;font-size:14px;font-family:'DM Sans',sans-serif;resize:none;box-sizing:border-box;">🍂 Fall Tennis is here! 8-Week Session starting Sept 7.
+
+Book your spot: https://niktennis.netlify.app/
+
+$560 for 8 weeks or $70/class. Rain dates at Old Oaks Country Club. Weekend round robins every Sat & Sun 2-4pm FREE!
+
+— Nik</textarea>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="blast-sms" checked style="width:16px;height:16px;"> SMS
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="blast-email" checked style="width:16px;height:16px;"> Email
+        </label>
+      </div>
+
+      <div id="blast-status" style="font-size:12px;color:var(--muted);margin-bottom:12px;min-height:20px;"></div>
+
+      <button class="confirm-btn" onclick="sendBlast()" id="blast-send-btn">
+        Send to All 90 Clients
+      </button>
     </div>
   </div>
 </body></html>
