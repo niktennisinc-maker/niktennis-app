@@ -13781,7 +13781,8 @@ function canSeeSlot(sl,cl,clientTeam){
   if(sl==='4.0s') return cl==='4.0s';
   // 4.0★ players see everything a regular 4.0 sees PLUS 4.0★
   if(cl==='4.0s'){
-    return sl==='4.0'||sl==='3.5-4.0'||sl==='4.0-4.5'||sl==='4.5'||sl==='4.0s';
+    // 4.0★ sees everything: 4.0, 3.5/4.0, 4.0/4.5, 4.5, 4.0★, special, any
+    return sl==='4.0'||sl==='3.5-4.0'||sl==='4.0-4.5'||sl==='4.5'||sl==='4.0s'||sl==='special'||sl==='any';
   }
   // Regular level matching
   if(sl===cl)return true;
