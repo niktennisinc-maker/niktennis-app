@@ -14956,9 +14956,23 @@ function renderHomeUpcoming(){
 
 async function cancelSlotBooking(bookingId, slotId){
   const slot = S.slots.find(s=>s.id==slotId);
-  const d = slot?.date ? new Date(slot.date+'T'+(slot.time||'12:00')+':00') : null;
-  const hoursLeft = d ? (d-Date.now())/(1000*60*60) : 999;
-  if(hoursLeft < 24){
+  // Get the actual upcoming date using nextDate logic
+  const upcomingDate = slot?.date ? new Date(slot.date+'T'+(slot.time||'12:00')+':00') : null;
+  // Use booking slot_label to determine date if slot date is past
+  const booking = S.bookings.find(b=>b.id==bookingId);
+  let classTime = upcomingDate;
+  // If slot date is in the past (recurring slot), find next occurrence
+  if(classTime && classTime < new Date()){
+    // Try to get date from slot_label
+    const labelMatch = booking?.slot_label?.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[,\s]*(\d+)/i);
+    if(labelMatch){
+      classTime = new Date(labelMatch[0]+' 2026 '+(slot?.time||'12:00'));
+    } else {
+      classTime = null; // Can't determine - allow cancel
+    }
+  }
+  const hoursLeft = classTime ? (classTime-Date.now())/(1000*60*60) : 999;
+  if(hoursLeft < 24 && hoursLeft > 0){
     alert('Cancellation not available within 24 hours of class time.');
     return;
   }
