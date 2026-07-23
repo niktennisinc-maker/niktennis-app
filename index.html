@@ -14953,6 +14953,21 @@ function renderHomeUpcoming(){
   }).join('');
 }
 
+
+async function cancelSlotBooking(bookingId, slotId){
+  const slot = S.slots.find(s=>s.id==slotId);
+  const d = slot?.date ? new Date(slot.date+'T'+(slot.time||'12:00')+':00') : null;
+  const hoursLeft = d ? (d-Date.now())/(1000*60*60) : 999;
+  if(hoursLeft < 24){
+    alert('Cancellation not available within 24 hours of class time.');
+    return;
+  }
+  if(!confirm('Cancel this booking?')) return;
+  try{
+    await sb.from('bookings').update({status:'cancelled'}).eq('id',bookingId);
+    await refreshClient();
+  }catch(e){alert('Could not cancel. Please try again.');}
+}
 async function cancelUpcomingBooking(id){
   if(!confirm('Cancel this booking?\n\nCancellations within 24 hours of class time are non-refundable.'))return;
   try{
@@ -15024,6 +15039,7 @@ function renderClientSlots(){
         <div>
           <div class="slot-price" style="${ip?'color:var(--orange);font-size:18px;':''}">${ip?'⏳':fmtPrice(s)}</div>
           <div class="slot-spots-label ${left===1&&!full?'urgent':''}">${ip?'Pay to confirm':mb?'✓ Booked':full?'Full':left===1?'Last spot!':left+' spots left'}</div>
+          ${mb&&!ip?`<button onclick="cancelSlotBooking(${mb.id},'${s.id}')" style="margin-top:6px;background:none;border:1px solid var(--red);color:var(--red);border-radius:6px;padding:4px 10px;font-size:10px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;">✕ Cancel</button>`:''}
         </div>
       </div>`;
     }).join('')}</div>`;
