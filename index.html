@@ -15053,7 +15053,7 @@ function renderClientSlots(){
         <div>
           <div class="slot-price" style="${ip?'color:var(--orange);font-size:18px;':''}">${ip?'⏳':fmtPrice(s)}</div>
           <div class="slot-spots-label ${left===1&&!full?'urgent':''}">${ip?'Pay to confirm':mb?'✓ Booked':full?'Full':left===1?'Last spot!':left+' spots left'}</div>
-          ${mb&&!ip?`<button onclick="cancelSlotBooking(${mb.id},'${s.id}')" style="margin-top:6px;background:none;border:1px solid var(--red);color:var(--red);border-radius:6px;padding:4px 10px;font-size:10px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;">✕ Cancel</button>`:''}
+          ${mb&&!ip?`<button onclick="event.stopPropagation();cancelSlotBooking(${mb.id},'${s.id}')" style="margin-top:6px;background:none;border:1px solid var(--red);color:var(--red);border-radius:6px;padding:4px 10px;font-size:10px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;">✕ Cancel</button>`:''}
         </div>
       </div>`;
     }).join('')}</div>`;
