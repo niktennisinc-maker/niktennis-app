@@ -13678,6 +13678,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
 </div>
 
 <script>
+async function setPackPos(email, val){
+  if(val===''||val===null||val===undefined) return;
+  const n=parseInt(val);
+  if(isNaN(n)) return;
+  try{
+    const{error}=await sb.from('clients').update({pack:n}).eq('email',email);
+    if(error) throw error;
+    S.clients=S.clients.map(c=>c.email===email?{...c,pack:n}:c);
+    // Visual feedback
+    const selects=document.querySelectorAll('select[onchange*="setPackPos"]');
+    selects.forEach(s=>{if(s.onchange&&s.onchange.toString().includes(email)){s.style.borderColor='var(--green)';setTimeout(()=>s.style.borderColor='rgba(245,200,66,.4)',1500);}});
+  }catch(e){
+    alert('Could not save pack. Try again.');
+    console.error('setPackPos error:',e);
+  }
+}
+
 function updateRealRevenue(){var c=S.bookings.filter(function(b){return b.status==="confirmed"&&b.slot_label!=="10-Class Pack Purchase"&&b.payment!=="fall_session";});var r=c.reduce(function(a,b){var s=S.slots.find(function(sl){return sl.id===b.slot_id;});return a+(s?parseFloat(s.price||70):0);},0);var g=500000;var p=Math.min(100,(r/g*100));var e=document.getElementById("real-rev-amount");if(e)e.textContent="$"+r.toLocaleString();var m=document.getElementById("real-rev-meta");if(m)m.textContent="Goal: $500,000 | Remaining: $"+(g-r).toLocaleString();var b=document.getElementById("real-rev-bar");if(b)b.style.width=p.toFixed(1)+"%";var pe=document.getElementById("real-rev-pct");if(pe)pe.textContent=p.toFixed(1)+"% to goal";}
 
 function setDateMin(){
