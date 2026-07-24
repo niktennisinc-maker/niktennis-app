@@ -15623,6 +15623,10 @@ function openModal(slotId){
 
 function closeModal(){
   const fn=document.getElementById('m-fall-notice');if(fn)fn.style.display='none';
+  // Reset all booking buttons so next booking works without refresh
+  document.querySelectorAll('[data-booking]').forEach(b=>{b.dataset.booking='';b.disabled=false;});
+  const mc=document.getElementById('m-confirm');if(mc){mc.disabled=true;mc.textContent='Select Payment Method';}
+  S.selPay=null;S.selSlot=null;
   document.getElementById('modal').classList.remove('open');
   S.selSlot=null;
   S.selPay=null;
