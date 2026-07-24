@@ -14545,6 +14545,11 @@ async function renderClients(){
         <option value="" ${(c.pack||0)===0&&packTotal===0?'selected':''} style="color:var(--muted);">🎟️ Pack</option>
         ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option value="${n}" ${(c.pack||0)===n?'selected':''} style="color:var(--gold);">${n}/10</option>`).join('')}
       </select>
+      <select class="btn-sm" onchange="setFallPackPos('${c.email}',this.value)" style="background:var(--card);border:1px solid rgba(255,165,0,.4);color:#FFA500;border-radius:8px;padding:3px 6px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;outline:none;">
+        <option value="" ${!c.fall_pack?'selected':''} style="color:var(--muted);">🍂 Fall</option>
+        <option value="pending" ${c.fall_pack==='pending'?'selected':''} style="color:#FFA500;">Pending</option>
+        <option value="confirmed" ${c.fall_pack==='confirmed'?'selected':''} style="color:var(--green);">Confirmed</option>
+      </select>
       <button class="btn-sm danger" onclick="removeClient('${c.email}')">Remove</button>
     </div>
   </div>`;
@@ -15656,6 +15661,35 @@ async function confirmBooking(type){
 
 
 // ── PACK ──
+
+async function setFallPackPos(email, status){
+  if(!status) return;
+  try{
+    // Record fall session package status for this client
+    await sb.from('settings').upsert({
+      key:'fall_pack_'+email,
+      value:JSON.stringify({email, status, updated:new Date().toISOString()})
+    });
+    // If confirmed, create a fall_session booking record
+    if(status==='confirmed'){
+      const existing = S.bookings.find(b=>b.client_email===email&&b.payment==='fall_session'&&b.status==='confirmed');
+      if(!existing){
+        const client = S.clients.find(c=>c.email===email);
+        await sb.from('bookings').insert({
+          client_email:email,
+          client_name:client?.name||email,
+          slot_id:null,
+          slot_label:'Fall Session Package (Sept 7 - Nov 5)',
+          payment:'fall_session',
+          status:'confirmed',
+          deadline:null
+        });
+      }
+    }
+    alert('Fall package status updated: '+status);
+    await refreshCoach();
+  }catch(e){alert('Could not update fall pack status.');}
+}
 async function adjustPack(email,delta){
   const c=S.clients.find(x=>x.email===email);if(!c)return;
   const n=Math.max(0,(c.pack||0)+delta);
