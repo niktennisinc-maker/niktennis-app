@@ -15720,38 +15720,6 @@ async function clearBanner(){
   try{await sb.from('settings').upsert({key:'banner',value:''});alert('Banner cleared.');}catch(e){}
 }
 // ── CLIENT NAV ──
-function openPackModal(){
-  S.selPackPay=null;document.querySelectorAll('#pack-modal .pay-opt').forEach(o=>o.classList.remove('sel'));
-  const btn=document.getElementById('pack-confirm-btn');if(btn){btn.disabled=true;btn.textContent='Select Payment Method';}
-  document.getElementById('pack-modal').classList.add('open');
-}
-function selPackPay(el,method){
-  document.querySelectorAll('#pack-modal .pay-opt').forEach(o=>o.classList.remove('sel'));el.classList.add('sel');S.selPackPay=method;
-  const btn=document.getElementById('pack-confirm-btn');if(btn){btn.disabled=false;btn.textContent='Confirm - Pay via '+method[0].toUpperCase()+method.slice(1);}
-}
-async function confirmPackPurchase(){
-  const c=S.profile;if(!c||!S.selPackPay)return;
-  const btn=document.getElementById('pack-confirm-btn');if(btn){btn.disabled=true;btn.textContent='Submitting...';}
-  try{
-    await sb.from('bookings').insert({client_email:c.email,client_name:c.name,slot_id:null,slot_label:'10-Class Pack Purchase',payment:S.selPackPay,status:'pending',deadline:Date.now()+48*60*60*1000});
-    document.getElementById('pack-modal').classList.remove('open');
-    alert('Pack purchase submitted! Send payment to confirm.');await refreshClient();
-  }catch(e){alert('Something went wrong.');if(btn){btn.disabled=false;btn.textContent='Confirm';}}
-}
-function addToCalendar(slot){
-  if(!slot)return;
-  try{
-    const start=new Date(slot.date+'T'+slot.time+':00'),end=new Date(start.getTime()+90*60*1000);
-    const fmt=d=>d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
-    window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent('NikTennis '+slot.level)+'&dates='+fmt(start)+'/'+fmt(end)+'&location='+encodeURIComponent(slot.location||''),'_blank');
-  }catch(e){}
-}
-function afterSuccess(){switchClientTab('book');}
-async function removeFromRoster(bookingId){
-  if(!confirm('Remove this player?'))return;
-  try{await sb.from('bookings').update({status:'cancelled'}).eq('id',bookingId);await refreshCoach();renderCurrentRoster();}
-  catch(e){alert('Could not remove player.');}
-}
 </script>
 
 
