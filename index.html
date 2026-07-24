@@ -14959,6 +14959,29 @@ function renderHomeUpcoming(){
 }
 
 
+
+async function joinWaitlist(slotId){
+  const c=S.profile;if(!c)return;
+  const slot=S.slots.find(s=>s.id===slotId);
+  if(!slot)return;
+  // Check already on waitlist
+  const existing=S.bookings.find(b=>b.slot_id===slotId&&b.client_email===c.email&&b.status==='waitlist');
+  if(existing){alert('You are already on the waitlist for this class.');return;}
+  if(!confirm('Join the waitlist for this class? You will be notified if a spot opens up.'))return;
+  try{
+    await sb.from('bookings').insert({
+      client_email:c.email,
+      client_name:c.name,
+      slot_id:slotId,
+      slot_label:slot.label||(slot.time+' '+slot.level),
+      payment:'waitlist',
+      status:'waitlist',
+      deadline:null
+    });
+    await refreshClient();
+    alert('You are on the waitlist! Nik will notify you if a spot opens up.');
+  }catch(e){alert('Could not join waitlist. Please try again.');}
+}
 async function cancelSlotBooking(bookingId, slotId){
   const slot = S.slots.find(s=>s.id==slotId);
   // Get the actual upcoming date using nextDate logic
@@ -15046,7 +15069,7 @@ function renderClientSlots(){
       const sb2=S.bookings.filter(b=>b.slot_id===s.id&&b.status!=='expired'&&b.status!=='cancelled');
       const mb=sb2.find(b=>b.client_email===S.user.email);
       const left=s.max-sb2.length,full=left<=0,disabled=full||!!mb,ip=mb&&mb.status==='pending';
-      return`<div class="slot-row ${disabled?'booked':''} ${ip?'pending-slot':''}" onclick="${disabled?'':'openModal('+s.id+')'}">
+      var isWaitlist=full&&!mb;return`<div class="slot-row ${mb?'booked':''} ${ip?'pending-slot':''}" onclick="${mb||ip?'':'openModal('+s.id+')'}">
         <div>
           <div class="slot-time-big">${fmtTime(s.time)}</div>
           <div class="slot-meta">
@@ -15057,8 +15080,9 @@ function renderClientSlots(){
         </div>
         <div>
           <div class="slot-price" style="${ip?'color:var(--orange);font-size:18px;':''}">${ip?'⏳':fmtPrice(s)}</div>
-          <div class="slot-spots-label ${left===1&&!full?'urgent':''}">${ip?'Pay to confirm':mb?'✓ Booked':full?'Full':left===1?'Last spot!':left+' spots left'}</div>
+          <div class="slot-spots-label">${ip?'Pay to confirm':mb?'✓ Booked':full?'Full':''}</div>
           ${mb&&!ip?`<button onclick="event.stopPropagation();cancelSlotBooking(${mb.id},'${s.id}')" style="margin-top:6px;background:none;border:1px solid var(--red);color:var(--red);border-radius:6px;padding:4px 10px;font-size:10px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;">✕ Cancel</button>`:''}
+          ${isWaitlist?`<button onclick="event.stopPropagation();joinWaitlist(${s.id})" style="margin-top:6px;background:rgba(245,200,66,.1);border:1px solid var(--gold);color:var(--gold);border-radius:6px;padding:4px 10px;font-size:10px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;">+ Waitlist</button>`:''}
         </div>
       </div>`;
     }).join('')}</div>`;
