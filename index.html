@@ -15091,7 +15091,14 @@ function renderClientSlots(){
       const sb2=S.bookings.filter(b=>b.slot_id===s.id&&b.status!=='expired'&&b.status!=='cancelled');
       const mb=sb2.find(b=>b.client_email===S.user.email);
       const left=s.max-sb2.length,full=left<=0,disabled=full||!!mb,ip=mb&&mb.status==='pending';
-      var isWaitlist=full&&!mb;return`<div class="slot-row ${mb?'booked':''} ${ip?'pending-slot':''}" onclick="${mb||ip?'':'openModal('+s.id+')'}">
+      var isWaitlist=full&&!mb;
+    var isPrivate=s.level==='any'||s.level==='private'||s.max===1;
+    var isEvent=s.level==='special';
+    var typeLabel=isPrivate?'🎾 Private Lesson':isEvent?'🎉 Special Event':'👥 Group Clinic';
+    var typeBorder=isPrivate?'rgba(200,240,66,.3)':isEvent?'rgba(249,115,22,.3)':'var(--border)';
+    var typeColor=isPrivate?'var(--green)':isEvent?'#fb923c':'var(--muted)';
+    return`<div class="slot-row ${mb?'booked':''} ${ip?'pending-slot':''}" style="${isPrivate?'border-color:rgba(200,240,66,.3);':isEvent?'border-color:rgba(249,115,22,.3);':''}" onclick="${mb||ip?'':'openModal('+s.id+')'}">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:${typeColor};margin-bottom:4px;">${typeLabel}</div>
         <div>
           <div class="slot-time-big">${fmtTime(s.time)}</div>
           <div class="slot-meta">
