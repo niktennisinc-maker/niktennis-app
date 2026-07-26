@@ -15212,20 +15212,6 @@ function renderSchedSlotsForDate(dateStr){
   }).join('');
 }
 
-async function joinWaitlist(slotId, slotLabel){
-  const c=S.profile;
-  // Save waitlist entry as a booking with status 'waitlist'
-  await sb.from('bookings').insert({
-    client_email:S.user.email,
-    client_name:c.name,
-    slot_id:slotId,
-    slot_label:slotLabel,
-    payment:'waitlist',
-    status:'waitlist',
-    deadline:null
-  });
-  alert(`You've been added to the waitlist for ${slotLabel}. Nik will be notified.`);
-}
 
 async function renderBuyPage(){
   const c=S.profile;const el=document.getElementById('buy-pack-cta');
