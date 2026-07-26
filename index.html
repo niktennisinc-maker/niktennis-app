@@ -14315,7 +14315,7 @@ function renderSlots(){
           <div style="font-size:12px;color:${isPast?'var(--muted)':'var(--gold)'};font-weight:600;margin-top:2px;">📅 ${dd}</div>
           <div style="display:flex;gap:5px;margin-top:4px;align-items:center;flex-wrap:wrap;">
             <span class="${lc(s.level)}">${ll(s.level)}</span>
-            <span style="font-size:11px;color:var(--muted);">${s.level==='any'?'60 min · $120':'90 min · '+(slotPrice(s)===75?'$75':'$70')}</span>
+            <span style="font-size:11px;color:var(--muted);">${s.level==='any'||s.max===1?'60 min · $'+(slotPrice(s)):(s.level==='special'?'120 min · $'+slotPrice(s):'90 min · $'+slotPrice(s))}</span>
             ${s.location?`<span style="font-size:11px;color:var(--muted);">📍 ${s.location}</span>`:''}
           </div>
           ${pending&&!isPast?`<div style="margin-top:5px;"><span class="badge-pending">⏳ ${pending} pending</span></div>`:''}
@@ -15605,7 +15605,8 @@ function openModal(slotId){
   // Populate slot info
   document.getElementById('m-slot-name').textContent=slot.label||(fmtTime(slot.time)+' · '+ll(slot.level));
   const meta=document.getElementById('m-slot-meta');
-  meta.innerHTML=`<span class="${lc(slot.level)}">${ll(slot.level)}</span>${slot.location?` <span style="font-size:11px;color:var(--muted);margin-left:6px;">📍 ${slot.location}</span>`:''}`;
+  const slotDur=(slot.level==='any'||slot.max===1)?60:(slot.level==='special'?120:(slot.duration||90));
+  meta.innerHTML=`<span class="${lc(slot.level)}">${ll(slot.level)}</span><span style="font-size:11px;color:var(--muted);margin-left:6px;">${slotDur} min</span>${slot.location?` <span style="font-size:11px;color:var(--muted);margin-left:6px;">📍 ${slot.location}</span>`:''}``;
   document.getElementById('m-price').textContent=fmtPrice(slot);
   document.getElementById('m-confirm').disabled=true;
   document.getElementById('m-confirm').textContent='Select Payment Method';
