@@ -15606,7 +15606,7 @@ function openModal(slotId){
   document.getElementById('m-slot-name').textContent=slot.label||(fmtTime(slot.time)+' · '+ll(slot.level));
   const meta=document.getElementById('m-slot-meta');
   const slotDur=(slot.level==='any'||slot.max===1)?60:(slot.level==='special'?120:(slot.duration||90));
-  meta.innerHTML=`<span class="${lc(slot.level)}">${ll(slot.level)}</span><span style="font-size:11px;color:var(--muted);margin-left:6px;">${slotDur} min</span>${slot.location?` <span style="font-size:11px;color:var(--muted);margin-left:6px;">📍 ${slot.location}</span>`:''}``;
+  meta.innerHTML='<span class="'+lc(slot.level)+'">'+ll(slot.level)+'</span><span style="font-size:11px;color:var(--muted);margin-left:6px;">'+slotDur+' min</span>'+(slot.location?'<span style="font-size:11px;color:var(--muted);margin-left:6px;">📍 '+slot.location+'</span>':'');
   document.getElementById('m-price').textContent=fmtPrice(slot);
   document.getElementById('m-confirm').disabled=true;
   document.getElementById('m-confirm').textContent='Select Payment Method';
