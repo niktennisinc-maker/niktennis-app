@@ -14982,6 +14982,30 @@ function renderHomeUpcoming(){
 
 
 
+
+async function confirmFallPackBooking(){
+  const slot=S.selSlot,u=S.user,c=S.profile;
+  if(!slot||!c)return;
+  const btn=document.getElementById('m-confirm');
+  if(btn){if(btn.dataset.booking==='1')return;btn.dataset.booking='1';btn.disabled=true;btn.textContent='Booking...';}
+  try{
+    await sb.from('bookings').insert({
+      client_email:u.email,
+      client_name:c.name,
+      slot_id:slot.id,
+      slot_label:slot.label||(slot.time+' - '+slot.level),
+      payment:'fall_session',
+      status:'confirmed',
+      deadline:null
+    });
+    closeModal();
+    await refreshClient();
+    alert('Booked! ✅ Fall Session class confirmed.');
+  }catch(e){
+    alert('Something went wrong. Please try again.');
+    if(btn){btn.disabled=false;btn.dataset.booking='';}
+  }
+}
 async function joinWaitlist(slotId){
   const c=S.profile;if(!c)return;
   const slot=S.slots.find(s=>s.id===slotId);
@@ -15611,9 +15635,22 @@ function openModal(slotId){
     document.getElementById('m-pack-left').textContent=pack+' lesson'+(pack!==1?'s':'')+' remaining';
     buyPackEl.style.display='none';
   } else if(isFallSlot){
-    // Fall slot - pack NOT allowed, only individual pay or fall session package
-    packEl.style.display='none';
-    buyPackEl.style.display='none';
+    // Fall slot - check if client has confirmed fall session package
+    const hasFallPack=S.bookings.some(b=>b.client_email===S.user.email&&b.payment==='fall_session'&&b.status==='confirmed');
+    if(hasFallPack){
+      // Has fall package - show as fall pack booking
+      packEl.style.display='block';
+      document.getElementById('m-pack-left').textContent='Fall Session Package';
+      buyPackEl.style.display='none';
+      // Set confirm button to use fall pack
+      const confirmBtn=document.getElementById('m-confirm');
+      if(confirmBtn){confirmBtn.disabled=false;confirmBtn.textContent='Book with Fall Package';}
+      confirmBtn.onclick=function(){confirmFallPackBooking();};
+    } else {
+      // No fall package - show pay options + notice
+      packEl.style.display='none';
+      buyPackEl.style.display='none';
+    }
     // Show fall session notice
     let fallNotice=document.getElementById('m-fall-notice');
     if(!fallNotice){
