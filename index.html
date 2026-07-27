@@ -14102,14 +14102,21 @@ async function init(){
     }
     const{data:{session}}=await sb.auth.getSession();
     if(session&&!handlingRecovery){S.user=session.user;await loadProfile();}
-  }catch(e){console.error('Init error:',e);showScreen('splash');}
+  }catch(e){
+    console.error('Init error:',e);
+    // Don't kick to splash on error - try to recover session first
+    try{
+      const{data:{session}}=await sb.auth.getSession();
+      if(session){S.user=session.user;await loadProfile();}
+      else{showScreen('splash');}
+    }catch(e2){showScreen('splash');}
+  }
 }
 
 async function loadProfile(){
   try{
     const dbPromise=sb.from('clients').select('id,name,email,level,pack,total,contact,team,created_at').eq('email',S.user.email).maybeSingle();
-    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),8000));
-    const{data}=await Promise.race([dbPromise,timeout]);
+    const{data}=await dbPromise;
     if(data){
       S.profile=data;
     } else {
@@ -14935,8 +14942,16 @@ async function refreshClient(){
   loadBanner();
   try{
     if(!S.user){
-      try{const{data:{session}}=await sb.auth.getSession();if(session)S.user=session.user;else{showScreen('login');return;}}
-      catch(e){showScreen('login');return;}
+      try{
+        const{data:{session}}=await sb.auth.getSession();
+        if(session){S.user=session.user;}
+        else{showScreen('login');return;}
+      }catch(e){
+        // Network error - don't kick, wait and retry
+        console.error('Session check failed:',e);
+        setTimeout(refreshClient,3000);
+        return;
+      }
     }
     const u=S.user;
     const{data:profile}=await sb.from('clients').select('id,name,email,level,pack,total,contact,team,created_at').eq('email',u.email).maybeSingle();
