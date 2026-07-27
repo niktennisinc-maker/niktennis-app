@@ -13678,6 +13678,48 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
 </div>
 
 <script>
+async function autoDeploy(){
+  try{
+    // Fetch deploy tokens from Supabase settings
+    const{data:cfg}=await sb.from('settings').select('key,value').in('key',['deploy_gt','deploy_nt','deploy_si']);
+    const cfgMap={};(cfg||[]).forEach(r=>cfgMap[r.key]=r.value);
+    const GT=cfgMap['deploy_gt'],NT=cfgMap['deploy_nt'],SI=cfgMap['deploy_si'];
+    if(!GT||!NT||!SI){console.log('Deploy tokens not configured');return;}
+    // Get latest file from GitHub
+    const h=await(await fetch('https://api.github.com/repos/niktennisinc-maker/niktennis-app/contents/index.html',{
+      headers:{'Authorization':'token '+GT,'Accept':'application/vnd.github.v3.raw','Cache-Control':'no-cache'}
+    })).text();
+    
+    // Compute SHA1
+    const s1=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-1',new TextEncoder().encode(h)))).map(b=>b.toString(16).padStart(2,'0')).join('');
+    
+    // Deploy to Netlify
+    const dep=await(await fetch('https://api.netlify.com/api/v1/sites/'+SI+'/deploys',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+NT,'Content-Type':'application/json'},
+      body:JSON.stringify({files:{'/index.html':s1}})
+    })).json();
+    
+    if(dep.required&&dep.required.length){
+      await fetch('https://api.netlify.com/api/v1/deploys/'+dep.id+'/files/index.html',{
+        method:'PUT',
+        headers:{'Authorization':'Bearer '+NT,'Content-Type':'application/octet-stream'},
+        body:new TextEncoder().encode(h)
+      });
+    }
+    
+    // Save deploy time
+    await sb.from('settings').upsert({key:'last_deploy',value:new Date().toISOString()});
+    console.log('Auto-deploy complete:', dep.state);
+  }catch(e){
+    console.log('Auto-deploy skipped:', e.message);
+  }
+}
+
+// Run auto-deploy when coach opens app
+// Also expose as manual trigger in Settings
+window._autoDeploy = autoDeploy;
+
 async function setPackPos(email, val){
   if(val===''||val===null||val===undefined) return;
   const n=parseInt(val);
@@ -14259,6 +14301,7 @@ async function refreshCoach(){
     loadTeamSchedules();
     initPauseButton();
     loadTwilioConfig();
+    autoDeploy();
     // Always land on Schedule tab
     const _st=document.querySelector('.ctab');if(_st&&!_st.classList.contains('active'))_st.click();
   }catch(e){console.error('refreshCoach error:',e);}
