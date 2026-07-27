@@ -13764,8 +13764,6 @@ const {createClient}=supabase;
 const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{
   auth:{
     persistSession:true,
-    storageKey:'niktennis-auth',
-    storage:window.localStorage,
     autoRefreshToken:true,
     detectSessionInUrl:true
   }
@@ -14112,12 +14110,7 @@ async function init(){
     if(session&&!handlingRecovery){S.user=session.user;await loadProfile();}
   }catch(e){
     console.error('Init error:',e);
-    // Don't kick to splash on error - try to recover session first
-    try{
-      const{data:{session}}=await sb.auth.getSession();
-      if(session){S.user=session.user;await loadProfile();}
-      else{showScreen('splash');}
-    }catch(e2){showScreen('splash');}
+    showScreen('splash');
   }
 }
 
@@ -14955,10 +14948,7 @@ async function refreshClient(){
         if(session){S.user=session.user;}
         else{showScreen('login');return;}
       }catch(e){
-        // Network error - don't kick, wait and retry
-        console.error('Session check failed:',e);
-        setTimeout(refreshClient,3000);
-        return;
+        showScreen('login');return;
       }
     }
     const u=S.user;
