@@ -13761,7 +13761,15 @@ async function fetchAllBookings(){
 const SUPABASE_URL='https://kaiqqguzzjhcjqpksazz.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthaXFxZ3V6empoY2pxcGtzYXp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MzMyMDQsImV4cCI6MjA5MDEwOTIwNH0.HfxfBIDIxapsctYJ0f5-SMsRM48W3Zpt-d2uYTgveFo';
 const {createClient}=supabase;
-const sb=createClient(SUPABASE_URL,SUPABASE_KEY);
+const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{
+  auth:{
+    persistSession:true,
+    storageKey:'niktennis-auth',
+    storage:window.localStorage,
+    autoRefreshToken:true,
+    detectSessionInUrl:false
+  }
+});
 
 
 // ── STARS ──
