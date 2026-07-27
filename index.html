@@ -14079,6 +14079,48 @@ async function loadTwilioConfig(){
     if(data?.value){S.twilioConfig=JSON.parse(data.value);}
   }catch(e){}
 }
+
+function openPrivateRequest(){
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('priv-date').min=today;
+  document.getElementById('priv-date').value='';
+  document.getElementById('priv-time').value='';
+  document.getElementById('priv-note').value='';
+  document.getElementById('priv-status').textContent='';
+  const btn=document.getElementById('priv-submit-btn');
+  btn.disabled=false;btn.textContent='Send Request to Nik';
+  document.getElementById('private-req-modal').classList.add('open');
+}
+
+async function submitPrivateRequest(){
+  const date=document.getElementById('priv-date').value;
+  const time=document.getElementById('priv-time').value;
+  const note=document.getElementById('priv-note').value.trim();
+  if(!date){alert('Please select a date.');return;}
+  if(!time){alert('Please select a time.');return;}
+  const btn=document.getElementById('priv-submit-btn');
+  btn.disabled=true;btn.textContent='Sending...';
+  const statusEl=document.getElementById('priv-status');
+  try{
+    const c=S.profile;
+    // Save request to Supabase settings table
+    await sb.from('settings').upsert({
+      key:'private_req_'+Date.now(),
+      value:JSON.stringify({
+        client_name:c.name,
+        client_email:c.email,
+        date,time,note,
+        requested_at:new Date().toISOString(),
+        status:'pending'
+      })
+    });
+    document.getElementById('private-req-modal').classList.remove('open');
+    alert('Request sent! \n\nNik will review your request for:\n'+date+' at '+time+'\n\nHe will contact you to confirm.');
+  }catch(e){
+    statusEl.textContent='Something went wrong. Please try again.';
+    btn.disabled=false;btn.textContent='Send Request to Nik';
+  }
+}
 async function init(){
   try{
     sb.auth.onAuthStateChange(async(event,session)=>{
@@ -15462,6 +15504,23 @@ async function setAvailability(team, matchId, status){
 
 // Coach team view
 
+
+async function loadPrivateRequests(){
+  const el=document.getElementById('private-requests-list');
+  if(!el)return;
+  try{
+    const{data}=await sb.from('settings').select('key,value').like('key','private_req_%').order('key',{ascending:false}).limit(20);
+    if(!data||!data.length){el.innerHTML='<div style="color:var(--muted);">No requests yet.</div>';return;}
+    const requests=data.map(r=>{try{return JSON.parse(r.value);}catch(e){return null;}}).filter(Boolean);
+    el.innerHTML=requests.map(r=>`
+      <div style="padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="font-size:13px;font-weight:600;color:var(--white);">${r.client_name}</div>
+        <div style="font-size:12px;color:var(--gold);margin-top:2px;">📅 ${r.date} at ${r.time}</div>
+        ${r.note?`<div style="font-size:11px;color:var(--muted);margin-top:2px;">"${r.note}"</div>`:''}
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;">${new Date(r.requested_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+      </div>`).join('');
+  }catch(e){el.innerHTML='<div style="color:var(--muted);">Could not load requests.</div>';}
+}
 async function loadTeamSchedules(){
   try{
     const{data}=await sb.from('settings').select('value').eq('key','team_schedules').single();
@@ -15926,6 +15985,50 @@ async function clearBanner(){
   try{await sb.from('settings').upsert({key:'banner',value:''});alert('Banner cleared.');}catch(e){}
 }
 // ── CLIENT NAV ──
+'coach-events-list');if(!el)return;
+  const now=new Date().toISOString().split('T')[0];
+  const evs=S.slots.filter(s=>s.level==='special').sort((a,b)=>a.date.localeCompare(b.date));
+  if(!evs.length){el.innerHTML='<div class="empty"><div class="ei">🎉</div>No events yet.</div>';return;}
+  el.innerHTML=evs.map(s=>{
+    const bks=S.bookings.filter(b=>b.slot_id===s.id&&b.status==='confirmed');
+    const cnt=bks.length,mx=s.max||12,past=s.date<now;
+    return '<div style="background:var(--card);border:1px solid rgba(236,72,153,.3);border-radius:14px;padding:14px 16px;margin-bottom:12px;opacity:'+(past?'0.5':'1')+'">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
+      +'<div style="font-size:15px;font-weight:700;color:#f472b6;">'+(s.title||'Special Event')+'</div>'
+      +'<div style="font-size:12px;font-weight:700;color:'+(cnt>=mx?'var(--red)':'var(--green)')+';">'+cnt+'/'+mx+'</div></div>'
+      +'<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">'+fmtEventDate(s.date,s.time)+'</div>'
+      +(s.image_url?'<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">Flyer uploaded</div>':'')
+      +'<div style="font-size:12px;color:var(--white);margin-bottom:8px;">'+(bks.length?bks.map(b=>b.client_name).join(', '):'No bookings yet')+'</div>'
+      +'<button class="btn-delete-event" onclick="delSlot('+s.id+')">Delete</button></div>';
+  }).join('');
+}
+// ── BANNER ──
+async function loadBanner(){
+  try{
+    const{data}=await sb.from('settings').select('value').eq('key','banner').single();
+    const msg=data?.value||'';
+    if(!S.isCoach)renderClientBanner(msg);
+    else{const inp=document.getElementById('banner-input');if(inp)inp.value=msg;}
+  }catch(e){}
+}
+function renderClientBanner(msg){
+  const el=document.getElementById('client-banner');if(!el)return;
+  if(!msg){el.style.display='none';el.innerHTML='';return;}
+  if(sessionStorage.getItem('banner-dismissed')===msg){el.style.display='none';return;}
+  el.style.display='block';
+  el.innerHTML='<div class="banner-bar"><span class="banner-text">'+msg+'</span><button class="banner-close" id="bnr-close-btn">&times;</button></div>';
+  document.getElementById('bnr-close-btn').onclick=function(){sessionStorage.setItem('banner-dismissed',msg);el.style.display='none';};
+}
+async function saveBanner(){
+  const msg=(document.getElementById('banner-input').value||'').trim();
+  try{await sb.from('settings').upsert({key:'banner',value:msg});alert(msg?'Banner saved!':'Banner cleared.');}
+  catch(e){alert('Could not save banner.');}
+}
+async function clearBanner(){
+  document.getElementById('banner-input').value='';
+  try{await sb.from('settings').upsert({key:'banner',value:''});alert('Banner cleared.');}catch(e){}
+}
+// ── CLIENT NAV ──
 </script>
 
 
@@ -15977,6 +16080,40 @@ $560 for 8 weeks or $70/class. Rain dates at Old Oaks Country Club. Weekend roun
       <button class="confirm-btn" onclick="sendBlast()" id="blast-send-btn">
         Send to All 90 Clients
       </button>
+    </div>
+  </div>
+
+  <!-- PRIVATE LESSON REQUEST MODAL -->
+  <div class="overlay" id="private-req-modal" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">🎾 Request Private Lesson</div>
+      <div class="sheet-sub" style="margin-bottom:20px;">Nik will confirm availability and get back to you</div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label style="font-size:12px;color:var(--muted);letter-spacing:1px;display:block;margin-bottom:6px;">PREFERRED DATE</label>
+        <input type="date" id="priv-date" style="width:100%;background:var(--dark);border:1px solid var(--border);color:var(--white);border-radius:10px;padding:11px 14px;font-size:14px;font-family:'DM Sans',sans-serif;box-sizing:border-box;">
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label style="font-size:12px;color:var(--muted);letter-spacing:1px;display:block;margin-bottom:6px;">PREFERRED TIME</label>
+        <select id="priv-time" style="width:100%;background:var(--dark);border:1px solid var(--border);color:var(--white);border-radius:10px;padding:11px 14px;font-size:14px;font-family:'DM Sans',sans-serif;">
+          <option value="">Select a time...</option>
+          <option>7:00 AM</option><option>7:30 AM</option><option>8:00 AM</option>
+          <option>8:30 AM</option><option>9:00 AM</option><option>9:30 AM</option>
+          <option>10:00 AM</option><option>10:30 AM</option><option>11:00 AM</option>
+          <option>11:30 AM</option><option>12:00 PM</option><option>12:30 PM</option>
+          <option>1:00 PM</option><option>1:30 PM</option><option>2:00 PM</option>
+          <option>2:30 PM</option><option>3:00 PM</option><option>3:30 PM</option>
+          <option>4:00 PM</option><option>4:30 PM</option><option>5:00 PM</option>
+          <option>5:30 PM</option><option>6:00 PM</option><option>6:30 PM</option>
+          <option>7:00 PM</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:20px;">
+        <label style="font-size:12px;color:var(--muted);letter-spacing:1px;display:block;margin-bottom:6px;">NOTE (optional)</label>
+        <textarea id="priv-note" rows="3" placeholder="Any preferences or details..." style="width:100%;background:var(--dark);border:1px solid var(--border);color:var(--white);border-radius:10px;padding:11px 14px;font-size:14px;font-family:'DM Sans',sans-serif;resize:none;box-sizing:border-box;"></textarea>
+      </div>
+      <div id="priv-status" style="font-size:12px;color:var(--muted);margin-bottom:10px;min-height:18px;"></div>
+      <button class="confirm-btn" onclick="submitPrivateRequest()" id="priv-submit-btn">Send Request to Nik</button>
     </div>
   </div>
 </body></html>
