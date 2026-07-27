@@ -15760,30 +15760,42 @@ async function confirmBooking(type){
 async function setFallPackPos(email, status){
   if(!status) return;
   try{
-    // Record fall session package status for this client
-    await sb.from('settings').upsert({
-      key:'fall_pack_'+email,
-      value:JSON.stringify({email, status, updated:new Date().toISOString()})
-    });
-    // If confirmed, create a fall_session booking record
+    const client = S.clients.find(c=>c.email===email);
     if(status==='confirmed'){
+      // Check if already has confirmed fall booking
       const existing = S.bookings.find(b=>b.client_email===email&&b.payment==='fall_session'&&b.status==='confirmed');
       if(!existing){
-        const client = S.clients.find(c=>c.email===email);
+        // Create confirmed fall_session booking so client can book fall classes
         await sb.from('bookings').insert({
           client_email:email,
           client_name:client?.name||email,
           slot_id:null,
-          slot_label:'Fall Session Package (Sept 7 - Nov 5)',
+          slot_label:'Fall Session Package — Sept 7 to Nov 5 (8 weeks)',
           payment:'fall_session',
           status:'confirmed',
           deadline:null
         });
+        alert('Fall package confirmed for '+client?.name+'. They can now book fall classes directly.');
+      } else {
+        alert(client?.name+' already has a confirmed fall package.');
       }
+    } else if(status==='pending'){
+      const existing = S.bookings.find(b=>b.client_email===email&&b.payment==='fall_session'&&b.status!=='cancelled');
+      if(!existing){
+        await sb.from('bookings').insert({
+          client_email:email,
+          client_name:client?.name||email,
+          slot_id:null,
+          slot_label:'Fall Session Package — Sept 7 to Nov 5 (8 weeks)',
+          payment:'fall_session',
+          status:'pending',
+          deadline:null
+        });
+      }
+      alert('Fall package set to pending for '+client?.name);
     }
-    alert('Fall package status updated: '+status);
     await refreshCoach();
-  }catch(e){alert('Could not update fall pack status.');}
+  }catch(e){alert('Could not update fall pack: '+e.message);}
 }
 async function adjustPack(email,delta){
   const c=S.clients.find(x=>x.email===email);if(!c)return;
