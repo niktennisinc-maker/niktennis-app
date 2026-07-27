@@ -15985,7 +15985,8 @@ async function clearBanner(){
   try{await sb.from('settings').upsert({key:'banner',value:''});alert('Banner cleared.');}catch(e){}
 }
 // ── CLIENT NAV ──
-'coach-events-list');if(!el)return;
+function renderCoachEvents(){
+  const el=document.getElementById('coach-events-list');if(!el)return;
   const now=new Date().toISOString().split('T')[0];
   const evs=S.slots.filter(s=>s.level==='special').sort((a,b)=>a.date.localeCompare(b.date));
   if(!evs.length){el.innerHTML='<div class="empty"><div class="ei">🎉</div>No events yet.</div>';return;}
