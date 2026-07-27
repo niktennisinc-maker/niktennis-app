@@ -15726,6 +15726,7 @@ function openModal(slotId){
 
 function closeModal(){
   const fn=document.getElementById('m-fall-notice');if(fn)fn.style.display='none';
+  const fb=document.getElementById('m-fall-book-btn');if(fb)fb.style.display='none';
   // Reset fall book button
   const fbb=document.getElementById('m-fall-book-btn');if(fbb){fbb.style.display='none';fbb.dataset.booking='';}
   // Reset confirm button
