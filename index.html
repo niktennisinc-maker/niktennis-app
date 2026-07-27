@@ -15681,14 +15681,26 @@ function openModal(slotId){
     // Fall slot - check if client has confirmed fall session package
     const hasFallPack=S.bookings.some(b=>b.client_email===S.user.email&&b.payment==='fall_session'&&b.status==='confirmed');
     if(hasFallPack){
-      // Has fall package - show as fall pack booking
-      packEl.style.display='block';
-      document.getElementById('m-pack-left').textContent='Fall Session Package';
+      // Has fall package - hide regular pack, hide buy pack, show dedicated fall button
+      packEl.style.display='none';
       buyPackEl.style.display='none';
-      // Set confirm button to use fall pack
-      const confirmBtn=document.getElementById('m-confirm');
-      if(confirmBtn){confirmBtn.disabled=false;confirmBtn.textContent='Book with Fall Package';}
-      confirmBtn.onclick=function(){confirmFallPackBooking();};
+      // Add/show fall pack book button
+      let fallBookBtn=document.getElementById('m-fall-book-btn');
+      if(!fallBookBtn){
+        fallBookBtn=document.createElement('button');
+        fallBookBtn.id='m-fall-book-btn';
+        fallBookBtn.className='confirm-btn';
+        fallBookBtn.style.marginBottom='10px';
+        packEl.parentNode.insertBefore(fallBookBtn,packEl);
+      }
+      fallBookBtn.style.display='block';
+      fallBookBtn.textContent='Book with Fall Package';
+      fallBookBtn.onclick=function(){confirmFallPackBooking();};
+      // Hide main confirm
+      document.getElementById('m-confirm').style.display='none';
+      // Hide pay options
+      document.querySelectorAll('#modal .pay-opt').forEach(o=>o.style.display='none');
+      document.querySelectorAll('#modal .pay-radio-group, #modal .selPay-wrap').forEach(o=>o.style.display='none');
     } else {
       // No fall package - show pay options + notice
       packEl.style.display='none';
@@ -15714,9 +15726,15 @@ function openModal(slotId){
 
 function closeModal(){
   const fn=document.getElementById('m-fall-notice');if(fn)fn.style.display='none';
-  // Reset all booking buttons so next booking works without refresh
+  // Reset fall book button
+  const fbb=document.getElementById('m-fall-book-btn');if(fbb){fbb.style.display='none';fbb.dataset.booking='';}
+  // Reset confirm button
+  const mc=document.getElementById('m-confirm');if(mc){mc.style.display='';mc.disabled=true;mc.textContent='Select Payment Method';mc.onclick=null;}
+  // Show pay options again
+  document.querySelectorAll('#modal .pay-opt').forEach(o=>o.style.display='');
+  document.querySelectorAll('#modal .pay-radio-group, #modal .selPay-wrap').forEach(o=>o.style.display='');
+  // Reset all booking buttons
   document.querySelectorAll('[data-booking]').forEach(b=>{b.dataset.booking='';b.disabled=false;});
-  const mc=document.getElementById('m-confirm');if(mc){mc.disabled=true;mc.textContent='Select Payment Method';}
   S.selPay=null;S.selSlot=null;
   document.getElementById('modal').classList.remove('open');
   S.selSlot=null;
@@ -15741,7 +15759,11 @@ async function confirmBooking(type){
     if(type==='package'){
       if((c.pack||0)<=0){alert('No pack lessons remaining.');if(btn){btn.disabled=false;btn.dataset.booking='';}return;}
       if(c.pack===1){if(!confirm('This is your LAST pack lesson. Continue?')){if(btn){btn.disabled=false;btn.dataset.booking='';}return;}}
-      const np=Math.max(0,(c.pack||0)-1);
+      // Re-fetch pack count from Supabase to prevent race conditions
+      const{data:freshClient}=await sb.from('clients').select('pack').eq('email',u.email).single();
+      const currentPack=freshClient?.pack||0;
+      if(currentPack<=0){alert('No pack lessons remaining.');if(btn){btn.disabled=false;btn.dataset.booking='';}return;}
+      const np=Math.max(0,currentPack-1);
       await sb.from('clients').update({pack:np}).eq('email',u.email);
       await sb.from('bookings').insert({client_email:u.email,client_name:c.name,slot_id:slot.id,slot_label:slot.label||(slot.time+' - '+slot.level),payment:'package',status:'confirmed',deadline:null});
       S.profile.pack=np;closeModal();await refreshClient();
