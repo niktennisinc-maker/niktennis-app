@@ -15744,11 +15744,25 @@ function openModal(slotId){
   const packEl=document.getElementById('m-pack-use');
   const buyPackEl=document.getElementById('m-buy-pack');
   const isFallSlot=slot.season==='fall'||slot.date>='2026-09-08';
-  if(pack>0&&!isFallSlot){
+  const isPrivateSlot=slot.level==='any'||slot.max===1;
+  if(pack>0&&!isFallSlot&&!isPrivateSlot){
     // Regular slot - pack can be used
     packEl.style.display='block';
     document.getElementById('m-pack-left').textContent=pack+' lesson'+(pack!==1?'s':'')+' remaining';
     buyPackEl.style.display='none';
+  } else if(isPrivateSlot){
+    // Private lesson - pack NOT allowed, must pay individually
+    packEl.style.display='none';
+    buyPackEl.style.display='none';
+    let privNotice=document.getElementById('m-private-notice');
+    if(!privNotice){
+      privNotice=document.createElement('div');
+      privNotice.id='m-private-notice';
+      privNotice.style.cssText='background:rgba(200,240,66,.08);border:1px solid rgba(200,240,66,.2);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:var(--green);';
+      privNotice.innerHTML='🎾 <strong>Private Lesson.</strong> Pay individually — pack lessons do not apply to private sessions.';
+      packEl.parentNode.insertBefore(privNotice, packEl);
+    }
+    privNotice.style.display='block';
   } else if(isFallSlot){
     // Fall slot - check if client has confirmed fall session package
     const hasFallPack=S.bookings.some(b=>b.client_email===S.user.email&&b.payment==='fall_session'&&b.status==='confirmed');
@@ -15799,6 +15813,7 @@ function openModal(slotId){
 function closeModal(){
   const fn=document.getElementById('m-fall-notice');if(fn)fn.style.display='none';
   const fb=document.getElementById('m-fall-book-btn');if(fb)fb.style.display='none';
+  const pn=document.getElementById('m-private-notice');if(pn)pn.style.display='none';
   // Reset fall book button
   const fbb=document.getElementById('m-fall-book-btn');if(fbb){fbb.style.display='none';fbb.dataset.booking='';}
   // Reset confirm button
