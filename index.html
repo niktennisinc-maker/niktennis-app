@@ -14774,9 +14774,11 @@ function filterAddPlayerList(){
 async function coachAddPlayer(email, name, pack){
   const slotId=S.overrideSlotId;
   const slot=S.slots.find(s=>s.id===slotId);
-  const payMethod=pack>0?'package':'venmo'; // Use pack if they have one, otherwise mark as venmo pending
-  const status=pack>0?'confirmed':'pending';
-  const deadline=pack>0?null:Date.now()+(2*60*60*1000);
+  const isPrivate=slot&&(slot.level==='any'||slot.max===1);
+  const usePack=pack>0&&!isPrivate; // Never use pack for private lessons
+  const payMethod=usePack?'package':'override';
+  const status=usePack?'confirmed':'confirmed'; // Coach adds = always confirmed
+  const deadline=null;
   await sb.from('bookings').insert({
     client_email:email,
     client_name:name,
