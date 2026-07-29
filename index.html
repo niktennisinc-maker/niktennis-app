@@ -14418,7 +14418,7 @@ function renderSlots(){
           ${pending&&!isPast?`<div style="margin-top:5px;"><span class="badge-pending">⏳ ${pending} pending</span></div>`:''}
         </div>
         <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
-          <span class="badge-spots ${full?'full':''}">${full?'FULL':sb2.filter(b=>b.status!=='cancelled').length+'/'+s.max}</span>
+          ${full?'<span class="badge-spots full">FULL</span>':''}
           ${!isPast?`<div style="display:flex;gap:6px;">
             <button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;" onclick="openEditTimeModal(${s.id})">✏️</button>
             <button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;" onclick="delSlot(${s.id})">🗑</button>
