@@ -15851,7 +15851,13 @@ async function confirmBooking(type){
   if(btn){if(btn.dataset.booking==='1')return;btn.dataset.booking='1';btn.disabled=true;btn.textContent='Booking...';}
   try{
     if(type==='package'){
-      if((c.pack||0)<=0){alert('No pack lessons remaining.');if(btn){btn.disabled=false;btn.dataset.booking='';}return;}
+      // Always fetch live pack count from Supabase to prevent over-booking
+      const{data:liveClient}=await sb.from('clients').select('pack').eq('email',S.user.email).single();
+      const livePack=liveClient?.pack||0;
+      if(livePack<=0){alert('No pack lessons remaining.');if(btn){btn.disabled=false;btn.dataset.booking='';}return;}
+      // Update cached value
+      S.profile.pack=livePack;
+      const c2=S.profile;
       if(c.pack===1){if(!confirm('This is your LAST pack lesson. Continue?')){if(btn){btn.disabled=false;btn.dataset.booking='';}return;}}
       // Re-fetch pack count from Supabase to prevent race conditions
       const{data:freshClient}=await sb.from('clients').select('pack').eq('email',u.email).single();
