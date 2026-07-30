@@ -16012,50 +16012,7 @@ async function clearBanner(){
   try{await sb.from('settings').upsert({key:'banner',value:''});alert('Banner cleared.');}catch(e){}
 }
 // ── CLIENT NAV ──
-function renderCoachEvents(){
-  const el=document.getElementById('coach-events-list');if(!el)return;
-  const now=new Date().toISOString().split('T')[0];
-  const evs=S.slots.filter(s=>s.level==='special').sort((a,b)=>a.date.localeCompare(b.date));
-  if(!evs.length){el.innerHTML='<div class="empty"><div class="ei">🎉</div>No events yet.</div>';return;}
-  el.innerHTML=evs.map(s=>{
-    const bks=S.bookings.filter(b=>b.slot_id===s.id&&b.status==='confirmed');
-    const cnt=bks.length,mx=s.max||12,past=s.date<now;
-    return '<div style="background:var(--card);border:1px solid rgba(236,72,153,.3);border-radius:14px;padding:14px 16px;margin-bottom:12px;opacity:'+(past?'0.5':'1')+'">'
-      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
-      +'<div style="font-size:15px;font-weight:700;color:#f472b6;">'+(s.title||'Special Event')+'</div>'
-      +'<div style="font-size:12px;font-weight:700;color:'+(cnt>=mx?'var(--red)':'var(--green)')+';">'+cnt+'/'+mx+'</div></div>'
-      +'<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">'+fmtEventDate(s.date,s.time)+'</div>'
-      +(s.image_url?'<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">Flyer uploaded</div>':'')
-      +'<div style="font-size:12px;color:var(--white);margin-bottom:8px;">'+(bks.length?bks.map(b=>b.client_name).join(', '):'No bookings yet')+'</div>'
-      +'<button class="btn-delete-event" onclick="delSlot('+s.id+')">Delete</button></div>';
-  }).join('');
-}
 // ── BANNER ──
-async function loadBanner(){
-  try{
-    const{data}=await sb.from('settings').select('value').eq('key','banner').single();
-    const msg=data?.value||'';
-    if(!S.isCoach)renderClientBanner(msg);
-    else{const inp=document.getElementById('banner-input');if(inp)inp.value=msg;}
-  }catch(e){}
-}
-function renderClientBanner(msg){
-  const el=document.getElementById('client-banner');if(!el)return;
-  if(!msg){el.style.display='none';el.innerHTML='';return;}
-  if(sessionStorage.getItem('banner-dismissed')===msg){el.style.display='none';return;}
-  el.style.display='block';
-  el.innerHTML='<div class="banner-bar"><span class="banner-text">'+msg+'</span><button class="banner-close" id="bnr-close-btn">&times;</button></div>';
-  document.getElementById('bnr-close-btn').onclick=function(){sessionStorage.setItem('banner-dismissed',msg);el.style.display='none';};
-}
-async function saveBanner(){
-  const msg=(document.getElementById('banner-input').value||'').trim();
-  try{await sb.from('settings').upsert({key:'banner',value:msg});alert(msg?'Banner saved!':'Banner cleared.');}
-  catch(e){alert('Could not save banner.');}
-}
-async function clearBanner(){
-  document.getElementById('banner-input').value='';
-  try{await sb.from('settings').upsert({key:'banner',value:''});alert('Banner cleared.');}catch(e){}
-}
 // ── CLIENT NAV ──
 </script>
 
