@@ -14671,7 +14671,7 @@ async function renderClients(){
       <button class="btn-sm" onclick="openTeamModal('${c.email}')" style="border-color:rgba(167,139,250,.4);color:#a78bfa;">🏆 Team</button>
       <select class="btn-sm" onchange="setPackPos('${c.email}',this.value)" style="background:var(--card);border:1px solid rgba(245,200,66,.4);color:var(--gold);border-radius:8px;padding:3px 6px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;outline:none;">
         <option value="" ${(c.pack||0)===0&&packTotal===0?'selected':''} style="color:var(--muted);">🎟️ Pack</option>
-        ${[0,1,2,3,4,5,6,7,8,9,10].map(n=>`<option value="${n}" ${(c.pack||0)===n?'selected':''} style="color:${n===0?'var(--red)':'var(--gold);}">${n} left</option>`).join('')}
+        ${[0,1,2,3,4,5,6,7,8,9,10].map(n=>`<option value="${n}" ${(c.pack||0)===n?'selected':''} style="color:${n===0?'#ff4444':'var(--gold)'}">${n} left</option>`).join('')}
       </select>
       <select class="btn-sm" onchange="setFallPackPos('${c.email}',this.value)" style="background:var(--card);border:1px solid rgba(255,165,0,.4);color:#FFA500;border-radius:8px;padding:3px 6px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;outline:none;">
         <option value="" ${!c.fall_pack?'selected':''} style="color:var(--muted);">🍂 Fall</option>
