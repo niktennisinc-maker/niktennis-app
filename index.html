@@ -13976,7 +13976,16 @@ async function showClientHistory(email, name){
     };
   });
 
-  document.getElementById('history-client-sub').textContent = sessions.length + ' sessions total';
+  const packSessions=sessions.filter(b=>b.payment==='package').length;
+  const indSessions=sessions.filter(b=>b.payment!=='package'&&b.payment!=='override'&&b.payment!=='fall_session').length;
+  const overrideSessions=sessions.filter(b=>b.payment==='override').length;
+  const fallSessions=sessions.filter(b=>b.payment==='fall_session').length;
+  let sub=sessions.length+' sessions total';
+  if(packSessions) sub+=' · '+packSessions+' pack';
+  if(indSessions) sub+=' · '+indSessions+' paid';
+  if(fallSessions) sub+=' · '+fallSessions+' fall';
+  if(overrideSessions) sub+=' · '+overrideSessions+' coach-added';
+  document.getElementById('history-client-sub').textContent=sub;
 
   if(!withSlots.length){
     document.getElementById('history-list').innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">No sessions yet.</div>';
@@ -14347,7 +14356,12 @@ async function refreshCoach(){
     const[r1,r3]=await Promise.all([sb.from('slots').select('*'),sb.from('clients').select('id,name,email,level,pack,total,contact,team,created_at')]);
     const bookings=await fetchAllBookings();
     S.slots=r1.data||[];S.bookings=bookings||[];S.clients=r3.data||[];
-    const confirmed=S.bookings.filter(b=>b.status==='confirmed'&&b.slot_label!=='10-Class Pack Purchase');
+    const confirmed=S.bookings.filter(b=>
+    b.status==='confirmed'&&
+    b.slot_label!=='10-Class Pack Purchase'&&
+    b.slot_label!=='Fall Session Package'&&
+    b.payment!=='fall_session_pkg_record'
+  );
     const sSlots=document.getElementById('s-slots');if(sSlots)sSlots.textContent=S.slots.length;
     const sBooked=document.getElementById('s-booked');if(sBooked)sBooked.textContent=confirmed.length;
     const sRev=document.getElementById('s-revenue');if(sRev)sRev.textContent='$500,000';
