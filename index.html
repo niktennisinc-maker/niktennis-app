@@ -13724,7 +13724,7 @@ async function autoDeploy(){
 // Also expose as manual trigger in Settings
 window._autoDeploy = autoDeploy;
 
-async async function setPackPos(email, val){
+async function setPackPos(email, val){
   if(val===''||val===null||val===undefined) return;
   const n=parseInt(val);
   if(isNaN(n)) return;
