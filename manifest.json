@@ -1,0 +1,32 @@
+{
+  "name": "NikTennis",
+  "short_name": "NikTennis",
+  "description": "Book tennis classes with Nik Krajic in New Rochelle, NY",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060808",
+  "theme_color": "#c8f042",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "sports",
+    "health",
+    "lifestyle"
+  ],
+  "screenshots": [],
+  "lang": "en-US"
+}
