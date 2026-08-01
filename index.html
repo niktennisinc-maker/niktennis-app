@@ -2995,7 +2995,7 @@ async function sendBlast(){
     niktennis.netlify.app &nbsp;·&nbsp; New Rochelle, NY
   </div>
 </div>
-<script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/service-worker.js").catch(function(e){console.log("SW err",e)});})}</script>
+<script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/service-worker.js").catch(function(e){console.log("SW err",e)});});}</script>
 </body></html>`;
 
   const emails=S.clients.filter(c=>c.email&&c.email.includes('@')).map(c=>({to:c.email,name:c.name.split(' ')[0]}));
