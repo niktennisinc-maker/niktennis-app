@@ -13741,11 +13741,45 @@ async function setPackPos(email, val){
   }
 }
 
-function updateRealRevenue(){var c=S.bookings.filter(function(b){return b.status==="confirmed"&&b.slot_label!=="10-Class Pack Purchase"&&b.payment!=="fall_session";});var r=c.reduce(function(a,b){var s=S.slots.find(function(sl){return sl.id===b.slot_id;});return a+(s?parseFloat(s.price||70):0);},0);var g=500000;var p=Math.min(100,(r/g*100));var e=document.getElementById("real-rev-amount");if(e)e.textContent="$"+r.toLocaleString();var m=document.getElementById("real-rev-meta");if(m)m.textContent="Goal: $500,000 | Remaining: $"+(g-r).toLocaleString();var b=document.getElementById("real-rev-bar");if(b)b.style.width=p.toFixed(1)+"%";var pe=document.getElementById("real-rev-pct");if(pe)pe.textContent=p.toFixed(1)+"% to goal";}
+function updateRealRevenue(){
+  const bks = S.bookings||[];
+  // Pack purchases
+  const packPurchases = bks.filter(b=>b.slot_label==='10-Class Pack Purchase'&&b.status==='confirmed');
+  const fallPackPurchases = bks.filter(b=>b.slot_label&&b.slot_label.includes('Fall Session Package')&&b.status==='confirmed');
+  // Individual confirmed paid lessons (venmo/zelle/bitcoin/override)
+  const paidLessons = bks.filter(b=>
+    b.status==='confirmed'&&
+    b.slot_label!=='10-Class Pack Purchase'&&
+    !(b.slot_label&&b.slot_label.includes('Fall Session Package'))&&
+    (b.payment==='venmo'||b.payment==='zelle'||b.payment==='bitcoin'||b.payment==='override')
+  );
+  // Pack lessons used (counted as $60 since sold at $600/10)
+  const packLessons = bks.filter(b=>b.status==='confirmed'&&b.payment==='package');
 
-function setDateMin(){
-  const today=new Date().toISOString().split('T')[0];
-  document.querySelectorAll('input[type="date"]').forEach(function(inp){inp.min=today;inp.value=inp.value||today;});
+  const total =
+    (packPurchases.length * 600) +
+    (fallPackPurchases.length * 560) +
+    (paidLessons.length * 70) ;
+
+  const goal = 500000;
+  const pct = Math.min(100, (total/goal*100));
+
+  const el = document.getElementById('real-rev-amount');
+  if(el) el.textContent = '$'+total.toLocaleString();
+  const meta = document.getElementById('real-rev-meta');
+  if(meta) meta.innerHTML =
+    '<span style="color:var(--muted);font-size:11px;">'+
+    packPurchases.length+' packs · '+
+    fallPackPurchases.length+' fall packs · '+
+    paidLessons.length+' individual · '+
+    '$'+(goal-total).toLocaleString()+' to goal</span>';
+  const bar = document.getElementById('real-rev-bar');
+  if(bar){
+    bar.style.width = pct.toFixed(1)+'%';
+    bar.style.background = pct > 50 ? 'var(--green)' : pct > 25 ? 'var(--gold)' : 'var(--orange)';
+  }
+  const pctEl = document.getElementById('real-rev-pct');
+  if(pctEl) pctEl.textContent = pct.toFixed(2)+'% toward $500,000 goal';
 }
 
 
