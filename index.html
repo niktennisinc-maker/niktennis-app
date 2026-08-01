@@ -1,5 +1,10 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="NikTennis">
+  <meta name="theme-color" content="#c8f042">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -14086,6 +14091,7 @@ async function sendBlast(){
     niktennis.netlify.app &nbsp;·&nbsp; New Rochelle, NY
   </div>
 </div>
+<script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/service-worker.js").catch(function(e){console.log("SW err",e)});})}</script>
 </body></html>`;
 
   const emails=S.clients.filter(c=>c.email&&c.email.includes('@')).map(c=>({to:c.email,name:c.name.split(' ')[0]}));
@@ -16150,4 +16156,5 @@ $560 for 8 weeks or $70/class. Rain dates at Old Oaks Country Club. Weekend roun
       <button class="confirm-btn" onclick="submitPrivateRequest()" id="priv-submit-btn">Send Request to Nik</button>
     </div>
   </div>
+<script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/service-worker.js").catch(function(e){console.log("SW err",e)});})}</script>
 </body></html>
