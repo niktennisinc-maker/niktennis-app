@@ -33053,7 +33053,8 @@ async function renderClients(){
       <button class="btn-sm" onclick="openLvlModal('${c.email}')">✏️ Level</button>
       <button class="btn-sm" onclick="openTeamModal('${c.email}')" style="border-color:rgba(167,139,250,.4);color:#a78bfa;">🏆 Team</button>
       <span style="display:inline-flex;align-items:center;gap:4px;">
-        <input type="number" min="0" max="20" value="${c.pack||0}" data-email="${c.email}" style="width:46px;background:var(--dark);border:1px solid rgba(245,200,66,.4);color:var(--gold);border-radius:6px;padding:4px 6px;font-size:12px;font-family:'DM Sans',sans-serif;text-align:center;" onclick="event.stopPropagation()">
+        <span style="font-size:10px;color:var(--muted);">left:</span>
+        <input type="number" min="0" max="20" value="${c.pack||0}" data-email="${c.email}" style="width:40px;background:var(--dark);border:1px solid rgba(245,200,66,.4);color:var(--gold);border-radius:6px;padding:4px 6px;font-size:12px;font-family:'DM Sans',sans-serif;text-align:center;" onclick="event.stopPropagation()">
         <button onclick="event.stopPropagation();savePackInput(this)" style="background:var(--green);color:var(--dark);border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Save</button>
       </span>
       <select class="btn-sm" onchange="setFallPackPos('${c.email}',this.value)" style="background:var(--card);border:1px solid rgba(255,165,0,.4);color:#FFA500;border-radius:8px;padding:3px 6px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;outline:none;">
@@ -34299,7 +34300,7 @@ async function setFallPackPos(email, status){
   try{
     const client = S.clients.find(c=>c.email===email);
     if(status==='remove'){
-    if(!confirm('Remove fall session access for '+client?.name+'?'))return;
+    if(!confirm('Mark fall package as UNPAID and remove access for '+client?.name+'? This will cancel their fall session booking.'))return;
     try{
       await sb.from('bookings').delete().eq('client_email',email).eq('payment','fall_session');
       alert('Fall session removed for '+client?.name);
