@@ -34242,12 +34242,28 @@ async function confirmBooking(type){
       if(livePack<=0){alert('No pack lessons remaining. Please purchase a new pack.');if(btn){btn.disabled=false;btn.dataset.booking='';}return;}
       // Warn on last lesson
       if(livePack===1){if(!confirm('This is your LAST pack lesson. Continue?')){if(btn){btn.disabled=false;btn.dataset.booking='';}return;}}
-      // Deduct and book atomically
+      // ATOMIC deduct - only update if pack is STILL > 0 (prevents race condition)
       const np=livePack-1;
-      await sb.from('clients').update({pack:np}).eq('email',u.email);
+      const{data:updated,error:updateErr}=await sb.from('clients')
+        .update({pack:np})
+        .eq('email',u.email)
+        .eq('pack',livePack)  // Only update if pack hasn't changed since we checked
+        .select('pack')
+        .single();
+      if(updateErr||!updated){
+        alert('Could not reserve pack lesson - pack may have changed. Please try again.');
+        if(btn){btn.disabled=false;btn.dataset.booking='';}return;
+      }
+      // Verify the deduction actually worked
+      if(updated.pack!==np){
+        alert('Pack already used by another booking. Please refresh and try again.');
+        if(btn){btn.disabled=false;btn.dataset.booking='';}return;
+      }
       await sb.from('bookings').insert({client_email:u.email,client_name:c.name,slot_id:slot.id,slot_label:slot.label||(slot.time+' - '+slot.level),payment:'package',status:'confirmed',deadline:null});
-      S.profile.pack=np;closeModal();await refreshClient();
-      alert('Booked ✅  '+(np===0?'Pack is now empty.':np+' lessons remaining.'));
+      S.profile.pack=np;
+      closeModal();
+      await refreshClient();
+      alert('Booked ✅  '+(np===0?'Pack is now empty. Please purchase a new pack to book more classes.':np+' lesson'+(np===1?'':'s')+' remaining.'));
     }else{
       await sb.from('bookings').insert({client_email:u.email,client_name:c.name,slot_id:slot.id,slot_label:slot.label||(slot.time+' - '+slot.level),payment:S.selPay,status:'pending',deadline:Date.now()+2*60*60*1000});
       closeModal();await refreshClient();
