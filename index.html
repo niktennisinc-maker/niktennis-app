@@ -32499,6 +32499,24 @@ async function submitPrivateRequest(){
     btn.disabled=false;btn.textContent='Send Request to Nik';
   }
 }
+
+async function savePackInput(btn){
+  const input=btn.previousElementSibling;
+  const email=input.dataset.email;
+  const val=parseInt(input.value);
+  if(isNaN(val)||val<0||val>20){alert('Enter a number between 0 and 20.');return;}
+  btn.disabled=true;btn.textContent='...';
+  try{
+    const{error}=await sb.from('clients').update({pack:val}).eq('email',email);
+    if(error)throw error;
+    S.clients=S.clients.map(c=>c.email===email?{...c,pack:val}:c);
+    btn.style.background='var(--green)';btn.textContent='✅ Saved';
+    setTimeout(()=>{btn.disabled=false;btn.textContent='Save';btn.style.background='var(--green)';},2000);
+  }catch(e){
+    alert('Could not save pack. Try again.');
+    btn.disabled=false;btn.textContent='Save';
+  }
+}
 async function init(){
   try{
     sb.auth.onAuthStateChange(async(event,session)=>{
