@@ -32556,21 +32556,7 @@ async function init(){
       }
     });
 
-    // Coach access: only nik@niktennis.com - verify session email matches
-    if(false // disabled - password required every time){
-      const{data:{session}}=await sb.auth.getSession();
-      const sessionEmail=session?.user?.email||'';
-      if(sessionEmail==='nik@niktennis.com'||sessionEmail==='nikola@niktennis.com'){
-        S.isCoach=true;
-        S.user=session.user;
-        S.profile={name:'Nik',email:sessionEmail,level:'4.5',pack:0,total:0};
-        if(requireCoachPassword()){showScreen('coach');refreshCoach();}
-        return;
-      } else {
-        // Not Nik - clear coach flag and proceed as client
-        window._coachVerified=false;
-      }
-    }
+    // Coach access handled via enterCoach() password only
     const{data:{session}}=await sb.auth.getSession();
     if(session&&!handlingRecovery){S.user=session.user;await loadProfile();}
   }catch(e){
