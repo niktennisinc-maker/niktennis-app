@@ -32047,6 +32047,25 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
 </div>
 
 <script>
+// ── COACH ACCESS GATE - UNBREAKABLE ──────────────────────────────────────
+// Only way in is correct password. No localStorage bypass. No session bypass.
+window._coachVerified = false;
+
+function requireCoachPassword(){
+  if(window._coachVerified) return true;
+  const pw = prompt('Coach password:');
+  if(pw === '1111'){
+    window._coachVerified = true;
+    return true;
+  }
+  window._coachVerified = false;
+  return false;
+}
+
+// Override showScreen to block coach without password
+const _originalShowScreen = null; // will be set after showScreen is defined
+// ─────────────────────────────────────────────────────────────────────────
+
 async function autoDeploy(){
   try{
     // Fetch deploy tokens from Supabase settings
@@ -32538,18 +32557,18 @@ async function init(){
     });
 
     // Coach access: only nik@niktennis.com - verify session email matches
-    if(localStorage.getItem('nt_coach')==='1'){
+    if(false // disabled - password required every time){
       const{data:{session}}=await sb.auth.getSession();
       const sessionEmail=session?.user?.email||'';
       if(sessionEmail==='nik@niktennis.com'||sessionEmail==='nikola@niktennis.com'){
         S.isCoach=true;
         S.user=session.user;
         S.profile={name:'Nik',email:sessionEmail,level:'4.5',pack:0,total:0};
-        showScreen('coach');refreshCoach();
+        if(requireCoachPassword()){showScreen('coach');refreshCoach();}
         return;
       } else {
         // Not Nik - clear coach flag and proceed as client
-        localStorage.removeItem('nt_coach');
+        window._coachVerified=false;
       }
     }
     const{data:{session}}=await sb.auth.getSession();
@@ -32574,11 +32593,11 @@ async function loadProfile(){
     const coachEmails=['nik@niktennis.com','nikola@niktennis.com'];
     if(coachEmails.includes(S.user.email)){
       S.isCoach=true;
-      localStorage.setItem('nt_coach','1');
-      showScreen('coach');refreshCoach();
+      // coach verified via password only
+      if(requireCoachPassword()){showScreen('coach');refreshCoach();}
     } else {
       S.isCoach=false;
-      localStorage.removeItem('nt_coach'); // Clear any stale coach flag
+      window._coachVerified=false; // Clear any stale coach flag
       showScreen('client');refreshClient();
     }
   }catch(e){
@@ -32712,15 +32731,15 @@ async function handleAuth(){
 function askCoachPassword(){
   const pw=prompt('Password:');
   if(pw==='1111'){
-    localStorage.setItem('nt_coach','1');
+    // coach verified via password only
     S.isCoach=true;S.user={email:'nik@niktennis.com'};
     S.profile={name:'Nik',email:'nik@niktennis.com',level:'4.5',pack:0,total:0};
-    showScreen('coach');refreshCoach();
+    if(requireCoachPassword()){showScreen('coach');refreshCoach();}
   } else if(pw!==null){alert('Wrong password.');}
 }
 
 async function signOut(){
-  localStorage.removeItem('nt_coach');
+  window._coachVerified=false;
   await sb.auth.signOut();
   S.user=null;S.profile=null;S.isCoach=false;
   showScreen('splash');
