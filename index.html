@@ -32537,12 +32537,20 @@ async function init(){
       }
     });
 
+    // Coach access: only nik@niktennis.com - verify session email matches
     if(localStorage.getItem('nt_coach')==='1'){
-      S.isCoach=true;
-      S.user={email:'nik@niktennis.com'};
-      S.profile={name:'Nik',email:'nik@niktennis.com',level:'4.5',pack:0,total:0};
-      showScreen('coach');refreshCoach();
-      return;
+      const{data:{session}}=await sb.auth.getSession();
+      const sessionEmail=session?.user?.email||'';
+      if(sessionEmail==='nik@niktennis.com'||sessionEmail==='nikola@niktennis.com'){
+        S.isCoach=true;
+        S.user=session.user;
+        S.profile={name:'Nik',email:sessionEmail,level:'4.5',pack:0,total:0};
+        showScreen('coach');refreshCoach();
+        return;
+      } else {
+        // Not Nik - clear coach flag and proceed as client
+        localStorage.removeItem('nt_coach');
+      }
     }
     const{data:{session}}=await sb.auth.getSession();
     if(session&&!handlingRecovery){S.user=session.user;await loadProfile();}
@@ -32563,10 +32571,15 @@ async function loadProfile(){
       await sb.from('clients').insert({name,email:S.user.email,level:'',pack:0,total:0,contact:S.user.email}).catch(()=>{});
       S.profile={name,email:S.user.email,level:'',pack:0,total:0};
     }
-    if(S.user.email==='nik@niktennis.com'||S.user.email==='nikola@niktennis.com'){
-      S.isCoach=true;showScreen('coach');refreshCoach();
+    const coachEmails=['nik@niktennis.com','nikola@niktennis.com'];
+    if(coachEmails.includes(S.user.email)){
+      S.isCoach=true;
+      localStorage.setItem('nt_coach','1');
+      showScreen('coach');refreshCoach();
     } else {
-      S.isCoach=false;showScreen('client');refreshClient();
+      S.isCoach=false;
+      localStorage.removeItem('nt_coach'); // Clear any stale coach flag
+      showScreen('client');refreshClient();
     }
   }catch(e){
     console.error('loadProfile error:',e);
