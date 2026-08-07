@@ -33042,6 +33042,7 @@ async function renderClients(){
         <option value="" ${!c.fall_pack?'selected':''} style="color:var(--muted);">🍂 Fall</option>
         <option value="pending" ${c.fall_pack==='pending'?'selected':''} style="color:#FFA500;">Pending</option>
         <option value="confirmed" ${c.fall_pack==='confirmed'?'selected':''} style="color:var(--green);">Confirmed</option>
+        <option value="remove" style="color:var(--red);">✕ Remove</option>
       </select>
       <button class="btn-sm danger" onclick="removeClient('${c.email}')">Remove</button>
     </div>
@@ -34279,7 +34280,16 @@ async function setFallPackPos(email, status){
   if(!status) return;
   try{
     const client = S.clients.find(c=>c.email===email);
-    if(status==='confirmed'){
+    if(status==='remove'){
+    if(!confirm('Remove fall session access for '+client?.name+'?'))return;
+    try{
+      await sb.from('bookings').delete().eq('client_email',email).eq('payment','fall_session');
+      alert('Fall session removed for '+client?.name);
+      await refreshCoach();
+    }catch(e){alert('Error removing fall session.');}
+    return;
+  }
+  if(status==='confirmed'){
       // Check if already has confirmed fall booking
       const existing = S.bookings.find(b=>b.client_email===email&&b.payment==='fall_session'&&b.status==='confirmed');
       if(!existing){
