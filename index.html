@@ -32752,7 +32752,6 @@ async function refreshCoach(){
     loadTeamSchedules();
     initPauseButton();
     loadTwilioConfig();
-    autoDeploy();
     // Always land on Schedule tab
     const _st=document.querySelector('.ctab');if(_st&&!_st.classList.contains('active'))_st.click();
   }catch(e){console.error('refreshCoach error:',e);}
