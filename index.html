@@ -32504,7 +32504,7 @@ async function savePackInput(btn){
   const input=btn.previousElementSibling;
   const email=input.dataset.email;
   const val=parseInt(input.value);
-  if(isNaN(val)||val<0||val>20){alert('Enter a number between 0 and 20.');return;}
+  if(isNaN(val)||val<0||val>10){alert('Pack must be between 0 and 10.');return;}
   btn.disabled=true;btn.textContent='...';
   try{
     const{error}=await sb.from('clients').update({pack:val}).eq('email',email);
@@ -33052,11 +33052,7 @@ async function renderClients(){
       <button class="btn-sm" data-email="${c.email}" data-name="${c.name}" onclick="showClientHistory(this.dataset.email,this.dataset.name)">📋 History</button>
       <button class="btn-sm" onclick="openLvlModal('${c.email}')">✏️ Level</button>
       <button class="btn-sm" onclick="openTeamModal('${c.email}')" style="border-color:rgba(167,139,250,.4);color:#a78bfa;">🏆 Team</button>
-      <span style="display:inline-flex;align-items:center;gap:4px;">
-        <span style="font-size:10px;color:var(--muted);">left:</span>
-        <input type="number" min="0" max="20" value="${c.pack||0}" data-email="${c.email}" style="width:40px;background:var(--dark);border:1px solid rgba(245,200,66,.4);color:var(--gold);border-radius:6px;padding:4px 6px;font-size:12px;font-family:'DM Sans',sans-serif;text-align:center;" onclick="event.stopPropagation()">
-        <button onclick="event.stopPropagation();savePackInput(this)" style="background:var(--green);color:var(--dark);border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Save</button>
-      </span>
+      ${(c.pack||0)>0?`<span style="display:inline-flex;align-items:center;gap:4px;"><span style="font-size:10px;color:var(--muted);">left:</span><input type="number" min="0" max="10" value="${Math.min(c.pack||0,10)}" data-email="${c.email}" style="width:40px;background:var(--dark);border:1px solid rgba(245,200,66,.4);color:var(--gold);border-radius:6px;padding:4px 6px;font-size:12px;font-family:'DM Sans',sans-serif;text-align:center;" onclick="event.stopPropagation()"><button onclick="event.stopPropagation();savePackInput(this)" style="background:var(--green);color:var(--dark);border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Save</button></span>`:''}
       <select class="btn-sm" onchange="setFallPackPos('${c.email}',this.value)" style="background:var(--card);border:1px solid rgba(255,165,0,.4);color:#FFA500;border-radius:8px;padding:3px 6px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;outline:none;">
         <option value="" ${!c.fall_pack?'selected':''} style="color:var(--muted);">🍂 Fall</option>
         <option value="pending" ${c.fall_pack==='pending'?'selected':''} style="color:#FFA500;">Pending</option>
@@ -34253,7 +34249,7 @@ async function confirmBooking(type){
       // HARD CHECK: fetch live pack from Supabase - never trust cached value
       const{data:liveC,error:liveErr}=await sb.from('clients').select('pack').eq('email',u.email).single();
       if(liveErr||!liveC){alert('Could not verify pack. Please try again.');if(btn){btn.disabled=false;btn.dataset.booking='';}return;}
-      const livePack=liveC.pack||0;
+      const livePack=Math.min(liveC.pack||0,10);
       // Block: private lessons
       if(slot.level==='any'||slot.max===1){alert('Pack cannot be used for Private Lessons.');if(btn){btn.disabled=false;btn.dataset.booking='';}return;}
       // Block: fall classes
